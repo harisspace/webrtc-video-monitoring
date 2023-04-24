@@ -7,6 +7,8 @@
     <title>WEBRTC</title>
     <script>
         window.addEventListener("load", function (e) {
+            // global websocket instance
+            let ws
             // html
             let btnOpenCamera = document.getElementById("btn-open-camera")
             let btnCloseCamera = document.getElementById("btn-close-camera")
@@ -31,15 +33,43 @@
 
             const iceServers = {
                 'iceServer': [
-                    {'urls': 'stun:stun.l.google.com:19302'}
+                    {'urls': 'stun:stun.l.google.com:19302'},
+                    {'urls': 'stun:stun.services.mozilla.com'}
                 ]
             }
 
+               //  // websocket
+               ws = new WebSocket("{{.}}")
+
+                ws.onopen = (e) => {
+                    console.log("ws open")
+                }
+
+                ws.onclose = (e) => {
+                    console.log("ws close")
+                }
+
+                ws.onmessage = (e) => {
+                    let msg = JSON.parse(e.data)
+                    console.log(msg)
+                    switch (msg.topic) {
+                        case 'candidate':
+                            console.log('candidate coming')
+                            const candidate = new RTCIceCandidate(JSON.parse(msg.data))
+                            rtcpc.addIceCandidate(candidate)
+                                .catch(err => console.log(err))
+                            break
+                        case 'answer':
+                            console.log('answer coming')
+                            rtcpc.setRemoteDescription(JSON.parse(msg.data))
+                            break;
+                        default:
+                            break;
+                    }
+                }
+
             // event
             btnOpenCamera.onclick = async (e) => {
-                //  // websocket
-                // ws = new WebSocket("{{.}}")
-
                 rtcpc = new RTCPeerConnection(iceServers)
                 rtcpc.onsignalingstatechange = signalingStateCallback
                 rtcpc.oniceconnectionstatechange = iceStateCallback
@@ -51,7 +81,11 @@
                 })
                 const sessionDescription = await rtcpc.createOffer()
                 rtcpc.setLocalDescription(sessionDescription)
-                console.log("offer, data: ", sessionDescription)
+                console.log("offer, sending: ", sessionDescription)
+                ws.send(JSON.stringify({
+                    topic: 'offer',
+                    data: JSON.stringify(sessionDescription)
+                }))
             }
 
             // callback
@@ -85,10 +119,15 @@
             }
 
             function onIceCandidate(e) {
-                if (e.candidate === null) {
+                if (e.candidate != null & ws != null) {
                     offerSD = rtcpc.localDescription
                     console.log('ice candidate', e.candidate, "\noffer: ",offerSD)
-                    textSDPOffer.innerText = btoa(JSON.stringify(offerSD))
+                    textSDPOffer.innerText = JSON.stringify(offerSD)
+                    console.log('candidate sending')
+                    ws.send(JSON.stringify({
+                        topic: 'candidate',
+                        data: JSON.stringify(offerSD)
+                    }))
                 }
             }
 
@@ -110,7 +149,7 @@
     <button id="btn-close-camera">Close camera</button>
     <br>
     <div>
-        <video id="remote-video" autoplay></video>
+        <video id="remote-video" autoplay playsinline></video>
     </div>
     <div>
         <textarea id="sdp-offer" cols="30" rows="10"></textarea>
