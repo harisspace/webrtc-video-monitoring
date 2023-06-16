@@ -51,10 +51,9 @@
 
                 ws.onmessage = (e) => {
                     let msg = JSON.parse(e.data)
-                    console.log(msg)
                     switch (msg.topic) {
                         case 'candidate':
-                            console.log('candidate coming')
+                            console.log('ice candidate-raspberry', JSON.parse(msg.data))
                             const candidate = new RTCIceCandidate(JSON.parse(msg.data))
                             rtcpc.addIceCandidate(candidate)
                                 .catch(err => console.log(err))
@@ -81,7 +80,7 @@
                 })
                 const sessionDescription = await rtcpc.createOffer()
                 rtcpc.setLocalDescription(sessionDescription)
-                console.log("offer, sending: ", sessionDescription)
+                console.log("offer sending: ", sessionDescription)
                 ws.send(JSON.stringify({
                     topic: 'offer',
                     data: JSON.stringify(sessionDescription)
@@ -121,9 +120,8 @@
             function onIceCandidate(e) {
                 if (e.candidate != null & ws != null) {
                     offerSD = rtcpc.localDescription
-                    console.log('ice candidate', e.candidate, "\noffer: ",offerSD)
+                    console.log('ice candidate-client', e.candidate, "\noffer: ",offerSD)
                     textSDPOffer.innerText = JSON.stringify(offerSD)
-                    console.log('candidate sending')
                     ws.send(JSON.stringify({
                         topic: 'candidate',
                         data: JSON.stringify(offerSD)
