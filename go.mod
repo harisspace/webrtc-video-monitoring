@@ -27,6 +27,7 @@ require (
 	github.com/pion/udp v0.1.4 // indirect
 	github.com/pion/udp/v2 v2.0.1 // indirect
 	github.com/pion/webrtc/v3 v3.1.59 // indirect
+	github.com/stianeikeland/go-rpio v4.2.0+incompatible // indirect
 	golang.org/x/crypto v0.8.0 // indirect
 	golang.org/x/image v0.7.0 // indirect
 	golang.org/x/net v0.9.0 // indirect

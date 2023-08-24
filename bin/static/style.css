@@ -1,0 +1,45 @@
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  list-style: none;
+  text-decoration: none;
+}
+
+body {
+  overflow-x: hidden;
+  margin: auto;
+  display: flex;
+}
+
+.base-camera-wrapper {
+  width: 700px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.base-camera-wrapper button {
+  margin: auto;
+}
+
+.camera-wrapper {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+
+.camera-wrapper div {
+  background: yellow;
+  width: 280px;
+  height: 240px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.camera-wrapper img {
+  width: 220px;
+  height: 180px;
+}

@@ -8,23 +8,29 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/pion/mediadevices"
+	"github.com/pion/mediadevices/pkg/codec/opus"
 	"github.com/pion/mediadevices/pkg/codec/vpx"
 	"github.com/pion/mediadevices/pkg/prop"
 	"github.com/pion/webrtc/v3"
 
+	"github.com/stianeikeland/go-rpio"
+
+	_ "github.com/pion/mediadevices/pkg/driver/audiotest"
 	_ "github.com/pion/mediadevices/pkg/driver/camera"
 )
 
 var (
 	peerConnection  *webrtc.PeerConnection
-	isDriverUsed    = false
-	localTracks     []mediadevices.Track
 	peerConnections []peerConnectionState
+	pin1                   = rpio.Pin(18)
+	servoDegree     uint32 = 0
 )
 
 type peerConnectionState struct {
@@ -48,6 +54,10 @@ func (t *threadSafeWriter) WriteJSON(v interface{}) error {
 func HTTPServer() {
 	port := flag.Int("port", 8080, "http server port")
 	flag.Parse()
+
+	fs := http.FileServer(http.Dir("./static"))
+
+	http.Handle("/static/", http.StripPrefix("/static", fs))
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		indexHTML, err := ioutil.ReadFile("index.html")
@@ -106,15 +116,23 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 			}
 
 			// Create a new RTCPeerConnection
+			// Register video codec
 			vp8Params, err := vpx.NewVP8Params()
 			if err != nil {
 				panic(err)
 			}
 			fmt.Println(vp8Params.RTPCodec())
-			vp8Params.BitRate = 1000_000 // 500kbps
+			vp8Params.BitRate = 400_000 // 500kbps
+
+			// Register audio codec
+			opusParams, err := opus.NewParams()
+			if err != nil {
+				panic(err)
+			}
 
 			codecSelector := mediadevices.NewCodecSelector(
 				mediadevices.WithVideoEncoders(&vp8Params),
+				mediadevices.WithAudioEncoders(&opusParams),
 			)
 
 			mediaEngine := webrtc.MediaEngine{}
@@ -124,6 +142,45 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				panic(err)
 			}
+
+			// Register data channel creation handling
+			peerConnection.OnDataChannel(func(d *webrtc.DataChannel) {
+				fmt.Printf("New DataChannel %s %d\n", d.Label(), d.ID())
+
+				// Register channel opening handling
+				d.OnOpen(func() {
+					fmt.Printf("Data channel '%s'-'%d' open\n", d.Label(), d.ID())
+				})
+
+				// Register text message handling
+				d.OnMessage(func(msg webrtc.DataChannelMessage) {
+					fmt.Println(string(msg.Data))
+
+					switch string(msg.Data) {
+					case "go-right":
+						servoDegree += 36
+						if servoDegree >= 162 {
+							break
+						}
+						pin1.DutyCycle(2+(servoDegree/18), 12)
+						time.Sleep(time.Millisecond * 50)
+						pin1.DutyCycle(0, 12)
+						time.Sleep(time.Millisecond * 50)
+					case "go-left":
+						servoDegree -= 36
+						if servoDegree <= 0 {
+							break
+						}
+
+						pin1.DutyCycle(2+(servoDegree/18), 12)
+						time.Sleep(time.Millisecond * 50)
+						pin1.DutyCycle(0, 12)
+						time.Sleep(time.Millisecond * 50)
+					default:
+						fmt.Println("default switch on message")
+					}
+				})
+			})
 
 			// Set the handler for ICE connection state
 			// This will notify you when the peer has connected/disconnected
@@ -150,43 +207,32 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 				}
 			})
 
-			s, err := mediadevices.GetUserMedia(mediadevices.MediaStreamConstraints{
+			s, _ := mediadevices.GetUserMedia(mediadevices.MediaStreamConstraints{
 				Video: func(c *mediadevices.MediaTrackConstraints) {
-					c.Height = prop.Int(480)
-					c.Width = prop.Int(640)
+					c.Height = prop.Int(144)
+					c.Width = prop.Int(256)
+				},
+				Audio: func(c *mediadevices.MediaTrackConstraints) {
 				},
 				Codec: codecSelector,
 			})
-			if err != nil {
-				isDriverUsed = true
-				log.Println(err)
-			}
 
-			if !isDriverUsed {
-				for _, track := range s.GetTracks() {
-					fmt.Println(track.Kind())
-					localTracks = append(localTracks, track)
-					track.OnEnded(func(err error) {
-						fmt.Printf("Track (ID: %s) ended with error: %v\n",
-							track.ID(), err)
-					})
+			for _, track := range s.GetTracks() {
+				fmt.Println(track.Kind())
+				track.OnEnded(func(err error) {
+					fmt.Printf("Track (ID: %s) ended with error: %v\n",
+						track.ID(), err)
+				})
 
-					_, err = peerConnection.AddTransceiverFromTrack(track,
-						webrtc.RtpTransceiverInit{
-							Direction: webrtc.RTPTransceiverDirectionSendonly,
-						},
-					)
-
-					if err != nil {
-						panic(err)
-					}
-				}
-			} else {
-				_, err = peerConnection.AddTransceiverFromTrack(localTracks[0],
-					webrtc.RTPTransceiverInit{
+				_, err = peerConnection.AddTransceiverFromTrack(track,
+					webrtc.RtpTransceiverInit{
 						Direction: webrtc.RTPTransceiverDirectionSendonly,
 					},
 				)
+
+				if err != nil {
+					panic(err)
+				}
 			}
 
 			// Set the remote SessionDescription
@@ -237,5 +283,18 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	if err := rpio.Open(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	defer rpio.Close()
+
+	pin1.Mode(rpio.Pwm)
+	pin1.Freq(50 * 12)
+	pin1.DutyCycle(2, 12)
+	time.Sleep(time.Millisecond * 100)
+	pin1.DutyCycle(0, 12)
+
 	HTTPServer()
 }
