@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital@1&display=swap');
+
 *,
 *::before,
 *::after {
@@ -12,34 +14,176 @@ body {
   overflow-x: hidden;
   margin: auto;
   display: flex;
+  font-family: 'Roboto', sans-serif;
 }
 
-.base-camera-wrapper {
-  width: 700px;
-  display: flex;
-  justify-content: space-between;
+main {
+  margin-top: 30px;
+  width: 100%;
 }
 
-.base-camera-wrapper button {
-  margin: auto;
-}
-
-.camera-wrapper {
+.camera-card {
   display: flex;
   align-items: center;
   flex-direction: column;
 }
 
-.camera-wrapper div {
-  background: yellow;
-  width: 280px;
-  height: 240px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.base-camera-wrapper {
+  background: #d9d9d9;
+  border-radius: 40px;
+  padding: 20px;
+  padding-left: 50px;
+  padding-right: 50px;
+  box-shadow: 0px 5px 1.5px #b2b2b2;
 }
 
 .camera-wrapper img {
-  width: 220px;
-  height: 180px;
+  width: 260px;
+  height: 220px;
+}
+
+.camera-card button {
+  margin-top: 10px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: none;
+  color: #fff;
+  background: linear-gradient(180deg, #2161c1 0%, #2759b6 100%);
+  background-origin: border-box;
+}
+
+.camera-card button:focus {
+  outline: none;
+}
+
+.camera-card button:hover {
+  cursor: pointer;
+  background: linear-gradient(180deg, #6b9ae0 0%, #719def 100%);
+}
+
+/* video wrapper */
+.base-video-wrapper {
+  display: flex;
+  justify-content: space-between;
+  margin: auto;
+  width: max-content;
+}
+
+/* CSS */
+.button-20 {
+  appearance: button;
+  background-color: #4D4AE8;
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, .15), rgba(255, 255, 255, 0));
+  border: 1px solid #4D4AE8;
+  border-radius: 1rem;
+  box-shadow: rgba(255, 255, 255, 0.15) 0 1px 0 inset,rgba(46, 54, 80, 0.075) 0 1px 1px;
+  box-sizing: border-box;
+  color: #FFFFFF;
+  cursor: pointer;
+  display: inline-block;
+  font-family: Inter,sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.5;
+  margin: 0;
+  padding: .5rem 1rem;
+  text-align: center;
+  text-transform: none;
+  transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  vertical-align: middle;
+}
+
+.button-20:focus:not(:focus-visible),
+.button-20:focus {
+  outline: 0;
+}
+
+.button-20:hover {
+  background-color: #3733E5;
+  border-color: #3733E5;
+}
+
+.button-20:focus {
+  background-color: #413FC5;
+  border-color: #3E3BBA;
+  box-shadow: rgba(255, 255, 255, 0.15) 0 1px 0 inset, rgba(46, 54, 80, 0.075) 0 1px 1px, rgba(104, 101, 235, 0.5) 0 0 0 .2rem;
+}
+
+.button-20:active {
+  background-color: #3E3BBA;
+  background-image: none;
+  border-color: #3A38AE;
+  box-shadow: rgba(46, 54, 80, 0.125) 0 3px 5px inset;
+}
+
+.button-20:active:focus {
+  box-shadow: rgba(46, 54, 80, 0.125) 0 3px 5px inset, rgba(104, 101, 235, 0.5) 0 0 0 .2rem;
+}
+
+.button-20:disabled {
+  background-image: none;
+  box-shadow: none;
+  opacity: .65;
+  pointer-events: none;
+}
+
+.arrow-wrapper {
+  display: flex;
+  justify-content: space-between;
+  width: 200px;
+  height: 200px;
+  margin: auto;
+  margin-top: 5px;
+}
+
+.arrow-legend {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid black;
+  padding: 20px 40px;
+  border-radius: 15px;
+  margin-left: 40px;
+}
+
+.arrow-legend h3 {
+  margin-bottom: 10px;
+}
+
+.arrow-legend div {
+  margin-bottom: 10px;
+}
+
+/* arrow button */
+.remote-video {
+  display: flex;
+  flex-direction: column;
+}
+
+.remote-video video {
+  width: 854px;
+  height: 480px;
+}
+
+.remote-video audio {
+  visibility: hidden;
+}
+
+.arrow {
+  border: 1px solid black;
+  border-width: 0 3px 3px 0;
+  display: inline-block;
+  padding: 3px;
+}
+
+.right {
+  transform: rotate(-45deg);
+  -webkit-transform: rotate(-45deg);
+}
+
+.left {
+  transform: rotate(135deg);
+  -webkit-transform: rotate(135deg);
 }

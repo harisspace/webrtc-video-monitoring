@@ -11,11 +11,15 @@
     // global websocket instance
     let ws, sendChannel
     // html
-    let btnOpenCamera1 = document.getElementsByClassName("btn-open-camera")[0]
+    let btnOpenCamera = document.querySelector(".btn-open-camera")
     let btnCloseCamera = document.getElementById("btn-close-camera")
-    let remoteVideo = document.getElementById("remote-video")
-    let goLeft = document.getElementById("go-left")
-    let goRight = document.getElementById("go-right")
+    let remoteVideo = document.querySelector(".remote-video")
+    let cameraCard = document.querySelector('.camera-card')
+    let baseVideoWrapper = document.querySelector('.base-video-wrapper')
+    let goLeft = document.querySelector(".left")
+    let goRight = document.querySelector(".right")
+    
+    baseVideoWrapper.style.display = "none";
   
     // webrtc config
     let rtcpc
@@ -58,7 +62,7 @@
 
     // ===== EVENT =====
     // ===== CAMERA EVENT WITH WEBRTC =====
-    btnOpenCamera1.onclick = async (e) => {
+    btnOpenCamera.onclick = async (e) => {
         rtcpc = new RTCPeerConnection(iceServers)
         rtcpc.onsignalingstatechange = signalingStateCallback
         rtcpc.oniceconnectionstatechange = iceStateCallback
@@ -87,6 +91,8 @@
     // callback
     function onAddStream(e) {
         console.log("got remote stream")
+        baseVideoWrapper.style.display = 'flex';
+        cameraCard.style.display = 'none'
         const el = document.createElement(e.track.kind)
         el.srcObject = e.streams[0]
         el.controls = true
@@ -141,25 +147,50 @@
     </script>
 </head>
 <body>
-     <div class="base-camera-wrapper">
-        <div class="camera-wrapper">
-            <div>
-                <img src="/static/img/logitech-1080.jpeg" alt="logitech 1080HD">
+    <main>
+        <!-- camera card -->
+        <div class="camera-card">
+            <div class="base-camera-wrapper">
+                <div class="camera-wrapper">
+                    <img src="/static/img/logitech-1080.jpeg" alt="logitech 1080HD">
+                </div>
             </div>
             <button class="btn-open-camera">Lihat kamera</button>
         </div>
-    </div>
-    <div class="base-video-wrapper">
-        <div id='remote-video'></div>
-        <div class="arrow-wrapper">
-            <div class="arrow">
-                <button id="go-left">kiri</button>
-                <button id="go-right">kanan</button>
-            </div>
-            <div class="arrow-explanation">
 
+        <!--------------------------- video wrapper ----------------------------------->
+        <div class="base-video-wrapper">
+            <div class="video-card">
+                <div class='remote-video'></div>
+                <div class="arrow-wrapper">
+                    <div>
+                        <button class="button-20" role="button">
+                            <i class="arrow left"></i>
+                        </button>
+                    </div>
+                    <div>
+                        <button class="button-20" role="button">
+                            <i class="arrow right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="arrow-legend">
+                <h3>Kontrol</h3>
+                <div>
+                    <button class="button-20" role="button">
+                        <i class="arrow left"></i>
+                    </button>
+                    <span>Kanan</span>
+                </div>
+                <div>
+                    <button class="button-20" role="button">
+                        <i class="arrow right"></i>
+                    </button>
+                    <span>Kiri</span>
+                </div>
             </div>
         </div>
-    </div>
+    </main>
 </body>
 </html>

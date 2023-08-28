@@ -65,7 +65,7 @@ func HTTPServer() {
 			panic(err)
 		}
 		homeTemplate := template.Must(template.New("").Parse(string(indexHTML)))
-		homeTemplate.Execute(w, "wss://"+r.Host+"/ws")
+		homeTemplate.Execute(w, "ws://"+r.Host+"/ws")
 	})
 
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {

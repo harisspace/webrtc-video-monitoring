@@ -2,10 +2,14 @@ window.addEventListener("load", function (e) {
     // global websocket instance
     let ws, sendChannel
     // html
-    let btnOpenCamera1 = document.getElementsByClassName("btn-open-camera-1")[0]
+    let btnOpenCamera = document.querySelector(".btn-open-camera")
     let btnCloseCamera = document.getElementById("btn-close-camera")
-    let remoteVideo = document.getElementById("remote-video")
-
+    let remoteVideo = document.querySelecor(".remote-video")
+    let cameraCard = document.querySelector('camera-card')
+    let baseVideoWrapper = document.querySelector('.base-video-wrapper')
+    
+    //baseVideoWrapper.style.display = none;
+    console.log(baseVideoWrapper)
   
     // webrtc config
     let rtcpc
@@ -51,7 +55,7 @@ window.addEventListener("load", function (e) {
         }
 
     // event
-    btnOpenCamera1.onclick = async (e) => {
+    btnOpenCamera.onclick = async (e) => {
         rtcpc = new RTCPeerConnection(iceServers)
         rtcpc.onsignalingstatechange = signalingStateCallback
         rtcpc.oniceconnectionstatechange = iceStateCallback
@@ -77,7 +81,13 @@ window.addEventListener("load", function (e) {
     // callback
     function onAddStream(e) {
         console.log("got remote stream")
-        remoteVideo.srcObject = e.streams[0]
+        baseVideoWrapper.style.display = flex;
+        cameraCard.style.display = none
+        el = document.createElement(e.track.kind)
+        el.srcObject = e.streams[0]
+        el.controls = true
+        el.autoplay = true
+        remoteVideo.appendChild(el)
     }
 
     function signalingStateCallback() {
