@@ -18,9 +18,14 @@
     let baseVideoWrapper = document.querySelector('.base-video-wrapper')
     let goLeft = document.querySelector(".left")
     let goRight = document.querySelector(".right")
+    let stopStream = document.querySelector(".stop-stream")
+    let selectResolution = document.getElementById("resolutions")
+    let resolution = '480p'
     
     baseVideoWrapper.style.display = "none";
   
+    selectResolution.onchange = changeResolutionVal
+    
     // webrtc config
     let rtcpc
 
@@ -60,6 +65,14 @@
             }
         }
 
+    function changeResolutionVal() {
+        resolution = selectResolution.value
+        console.log(resolution)
+        ws.send(JSON.stringify({
+            topic: 'resolution',
+            data: resolution
+        }))
+    }
     // ===== EVENT =====
     // ===== CAMERA EVENT WITH WEBRTC =====
     btnOpenCamera.onclick = async (e) => {
@@ -143,6 +156,11 @@
     goRight.onclick = () => {
         sendChannel.send("go-right")
     }
+    
+    // ===== STOP STREAM =====
+    stopStream.onclick = () => {
+        sendChannel.send("stop-stream")
+    }
 })
     </script>
 </head>
@@ -156,6 +174,13 @@
                 </div>
             </div>
             <button class="btn-open-camera">Lihat kamera</button>
+            <br>
+            <label>Pilih resolusi video</label>
+            <select id="resolutions">
+                <option value="480p">480p</option>
+                <option value="720p">720p</option>
+                <option value="1080p">1080p</option>
+            </select>
         </div>
 
         <!--------------------------- video wrapper ----------------------------------->
@@ -191,6 +216,7 @@
                 </div>
             </div>
         </div>
+        <button class="stop-stream">Stop</button>
     </main>
 </body>
 </html>

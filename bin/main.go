@@ -8,10 +8,9 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"sync"
-	"time"
+	"os/exec"
 
 	"github.com/gorilla/websocket"
 	"github.com/pion/mediadevices"
@@ -20,8 +19,6 @@ import (
 	"github.com/pion/mediadevices/pkg/prop"
 	"github.com/pion/webrtc/v3"
 
-	"github.com/stianeikeland/go-rpio"
-
 	_ "github.com/pion/mediadevices/pkg/driver/audiotest"
 	_ "github.com/pion/mediadevices/pkg/driver/camera"
 )
@@ -29,9 +26,14 @@ import (
 var (
 	peerConnection  *webrtc.PeerConnection
 	peerConnections []peerConnectionState
-	pin1                   = rpio.Pin(18)
-	servoDegree     uint32 = 0
+	resolution = "480p"
+	servoDeg = 0
 )
+
+type resolutioDimention struct {
+	width uint16
+	height uint16
+}
 
 type peerConnectionState struct {
 	peerConnection *webrtc.PeerConnection
@@ -65,7 +67,7 @@ func HTTPServer() {
 			panic(err)
 		}
 		homeTemplate := template.Must(template.New("").Parse(string(indexHTML)))
-		homeTemplate.Execute(w, "ws://"+r.Host+"/ws")
+		homeTemplate.Execute(w, "wss://"+r.Host+"/ws")
 	})
 
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
@@ -79,6 +81,8 @@ func HTTPServer() {
 }
 
 func serveWs(w http.ResponseWriter, r *http.Request) {
+	resDimention := &resolutioDimention{width: 854, height: 480}
+	
 	type BaseMessage struct {
 		Data  string `json:"data"`
 		Topic string `json:"topic"`
@@ -106,7 +110,27 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 		msgRes := BaseMessage{}
 
 		switch json.Unmarshal(msg, &msgRes); msgRes.Topic {
+		case "resolution":
+			fmt.Println(msgRes.Data)
+			resolution = msgRes.Data
+			// Resolution with 16:9 aspect ratio
+			switch(resolution) {
+			case "480p":
+				return
+			case "720p":
+				resDimention.width = 1280
+				resDimention.height = 720
+			case "1080p":
+				resDimention.width = 1920
+				resDimention.height = 1080
+			default:
+				resDimention.width = 854
+				resDimention.height = 480
+			}
 		case "offer":
+			fmt.Print(resDimention.width)
+			fmt.Printf("resolution width: %d, height: %d", resDimention.width, resDimention.height)
+		
 			config := webrtc.Configuration{
 				ICEServers: []webrtc.ICEServer{
 					{
@@ -122,7 +146,7 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 				panic(err)
 			}
 			fmt.Println(vp8Params.RTPCodec())
-			vp8Params.BitRate = 400_000 // 500kbps
+			vp8Params.BitRate = 1000_000 // 1MB
 
 			// Register audio codec
 			opusParams, err := opus.NewParams()
@@ -142,45 +166,6 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				panic(err)
 			}
-
-			// Register data channel creation handling
-			peerConnection.OnDataChannel(func(d *webrtc.DataChannel) {
-				fmt.Printf("New DataChannel %s %d\n", d.Label(), d.ID())
-
-				// Register channel opening handling
-				d.OnOpen(func() {
-					fmt.Printf("Data channel '%s'-'%d' open\n", d.Label(), d.ID())
-				})
-
-				// Register text message handling
-				d.OnMessage(func(msg webrtc.DataChannelMessage) {
-					fmt.Println(string(msg.Data))
-
-					switch string(msg.Data) {
-					case "go-right":
-						servoDegree += 36
-						if servoDegree >= 162 {
-							break
-						}
-						pin1.DutyCycle(2+(servoDegree/18), 12)
-						time.Sleep(time.Millisecond * 50)
-						pin1.DutyCycle(0, 12)
-						time.Sleep(time.Millisecond * 50)
-					case "go-left":
-						servoDegree -= 36
-						if servoDegree <= 0 {
-							break
-						}
-
-						pin1.DutyCycle(2+(servoDegree/18), 12)
-						time.Sleep(time.Millisecond * 50)
-						pin1.DutyCycle(0, 12)
-						time.Sleep(time.Millisecond * 50)
-					default:
-						fmt.Println("default switch on message")
-					}
-				})
-			})
 
 			// Set the handler for ICE connection state
 			// This will notify you when the peer has connected/disconnected
@@ -209,8 +194,8 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 
 			s, _ := mediadevices.GetUserMedia(mediadevices.MediaStreamConstraints{
 				Video: func(c *mediadevices.MediaTrackConstraints) {
-					c.Height = prop.Int(144)
-					c.Width = prop.Int(256)
+					c.Height = prop.Int(resDimention.height)
+					c.Width = prop.Int(resDimention.width)
 				},
 				Audio: func(c *mediadevices.MediaTrackConstraints) {
 				},
@@ -234,6 +219,38 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 					panic(err)
 				}
 			}
+			
+			// Register data channel creation handling
+			peerConnection.OnDataChannel(func(d *webrtc.DataChannel) {
+				fmt.Printf("New DataChannel %s %d\n", d.Label(), d.ID())
+
+				// Register channel opening handling
+				d.OnOpen(func() {
+					fmt.Printf("Data channel '%s'-'%d' open\n", d.Label(), d.ID())
+				})
+
+				// Register text message handling
+				d.OnMessage(func(msg webrtc.DataChannelMessage) {
+					switch string(msg.Data) {
+					case "go-right":
+						if servoDeg >= 180 {
+							return
+						}
+						servoDeg += 10
+						fmt.Printf("go-right: %d", servoDeg)
+						exec.Command("python3", "main.py", strconv.Itoa(servoDeg)).Run()
+					case "go-left":
+						if servoDeg <= 0 {
+							return
+						}
+						servoDeg -= 10
+						fmt.Printf("go-left: %d", servoDeg)
+						exec.Command("python3", "main.py", strconv.Itoa(servoDeg)).Run()
+					default:
+						servoDeg = 0
+					}
+				})
+			})
 
 			// Set the remote SessionDescription
 			offer := webrtc.SessionDescription{}
@@ -283,18 +300,5 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	if err := rpio.Open(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	defer rpio.Close()
-
-	pin1.Mode(rpio.Pwm)
-	pin1.Freq(50 * 12)
-	pin1.DutyCycle(2, 12)
-	time.Sleep(time.Millisecond * 100)
-	pin1.DutyCycle(0, 12)
-
 	HTTPServer()
 }
