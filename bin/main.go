@@ -115,6 +115,9 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 			resolution = msgRes.Data
 			// Resolution with 16:9 aspect ratio
 			switch(resolution) {
+			case "240p":
+				resDimention.width = 426
+				resDimention.height = 240
 			case "480p":
 				return
 			case "720p":
