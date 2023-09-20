@@ -19,7 +19,7 @@ import (
 	"github.com/pion/mediadevices/pkg/prop"
 	"github.com/pion/webrtc/v3"
 
-	_ "github.com/pion/mediadevices/pkg/driver/audiotest"
+	_ "github.com/pion/mediadevices/pkg/driver/microphone"
 	_ "github.com/pion/mediadevices/pkg/driver/camera"
 )
 
@@ -137,7 +137,7 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 			config := webrtc.Configuration{
 				ICEServers: []webrtc.ICEServer{
 					{
-						URLs: []string{"stun:stun.l.google.com:19302", "stun:stun.services.mozilla.com"},
+						URLs: []string{"stun:stun.l.google.com:19302", "stun:stun.services.mozilla.com", "stun:stun2.l.google.com:19302"},
 					},
 				},
 			}
@@ -169,6 +169,11 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				panic(err)
 			}
+			defer func() {
+				if cErr := peerConnection.Close(); cErr != nil {
+					fmt.Printf("cannot close peerConnection %v\n", cErr)
+				}
+			}()
 
 			// Set the handler for ICE connection state
 			// This will notify you when the peer has connected/disconnected
@@ -204,8 +209,9 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 				},
 				Codec: codecSelector,
 			})
-
-			for _, track := range s.GetTracks() {
+			
+			if (s != nil) {
+				for _, track := range s.GetTracks() {
 				fmt.Println(track.Kind())
 				track.OnEnded(func(err error) {
 					fmt.Printf("Track (ID: %s) ended with error: %v\n",
@@ -222,6 +228,9 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 					panic(err)
 				}
 			}
+			}
+
+			
 			
 			// Register data channel creation handling
 			peerConnection.OnDataChannel(func(d *webrtc.DataChannel) {
