@@ -30,9 +30,8 @@
     let rtcpc
 
     const iceServers = {
-        'iceServer': [
-            {'urls': 'stun:stun.l.google.com:19302'},
-            {'urls': 'stun:stun.services.mozilla.com'}
+    'iceServer': [
+            {'url': 'stun:stun.l.google.com:19302'}
         ]
     }
 
@@ -57,7 +56,7 @@
                         .catch(err => console.log(err))
                     break
                 case 'answer':
-                    console.log('answer coming')
+                    console.log('answer coming', JSON.parse(msg.data))
                     rtcpc.setRemoteDescription(JSON.parse(msg.data))
                     break;
                 default:
@@ -74,6 +73,9 @@
         }))
     }
     // ===== EVENT =====
+    const offerOptions = {
+    offerToReceiveVideo: 1
+  }
     // ===== CAMERA EVENT WITH WEBRTC =====
     btnOpenCamera.onclick = async (e) => {
         rtcpc = new RTCPeerConnection(iceServers)
@@ -85,9 +87,10 @@
         rtcpc.addTransceiver('video', {
             'direction': 'recvonly'
         })
-        rtcpc.addTransceiver('audio', {
+	rtcpc.addTransceiver('audio', {
             'direction': 'recvonly'
         })
+	
         sendChannel = rtcpc.createDataChannel('foo')
         sendChannel.onclose = () => console.log('sendChannel has closed')
         sendChannel.onopen = () => console.log('sendChannel has opened')
@@ -131,10 +134,7 @@
 
     function connStateCallback() {
         let connState
-        if (rtcpc) {
-            connState = rtcpc.connectionState
-            console.log("Connection state: ", connectionState)
-        }
+        if (rtcpc && rtcpc.connectionState) console.log("Connection state: ", rtcpc.connectionState)
     }
 
     function onIceCandidate(e) {
@@ -143,7 +143,7 @@
             console.log('ice candidate-client', e.candidate, "\noffer: ",offerSD)
             ws.send(JSON.stringify({
                 topic: 'candidate',
-                data: JSON.stringify(offerSD)
+                data: JSON.stringify(e.candidate)
             }))
         }
     }
@@ -158,9 +158,9 @@
     }
     
     // ===== STOP STREAM =====
-    stopStream.onclick = () => {
-        sendChannel.send("stop-stream")
-    }
+    //stopStream.onclick = () => {
+    //    sendChannel.send("stop-stream")
+    //}
 })
     </script>
 </head>

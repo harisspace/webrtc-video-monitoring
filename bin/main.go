@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"fmt"
 	"html/template"
 	"io/ioutil"
 	"log"
@@ -103,6 +102,8 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Println(err)
+			}else if websocket.IsCloseError(err, 1001) {
+				log.Printf("connection close: %v", err)
 			}
 			break
 		}
@@ -111,7 +112,7 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 
 		switch json.Unmarshal(msg, &msgRes); msgRes.Topic {
 		case "resolution":
-			fmt.Println(msgRes.Data)
+			log.Println(msgRes.Data)
 			resolution = msgRes.Data
 			// Resolution with 16:9 aspect ratio
 			switch(resolution) {
@@ -119,7 +120,8 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 				resDimention.width = 426
 				resDimention.height = 240
 			case "480p":
-				return
+				resDimention.width = 854
+				resDimention.height = 480
 			case "720p":
 				resDimention.width = 1280
 				resDimention.height = 720
@@ -131,13 +133,12 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 				resDimention.height = 480
 			}
 		case "offer":
-			fmt.Print(resDimention.width)
-			fmt.Printf("resolution width: %d, height: %d", resDimention.width, resDimention.height)
+			log.Printf("resolution width: %d, height: %d", resDimention.width, resDimention.height)
 		
 			config := webrtc.Configuration{
 				ICEServers: []webrtc.ICEServer{
 					{
-						URLs: []string{"stun:stun.l.google.com:19302", "stun:stun.services.mozilla.com", "stun:stun2.l.google.com:19302"},
+						URLs: []string{"stun:stun.l.google.com:19302"},
 					},
 				},
 			}
@@ -148,8 +149,8 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				panic(err)
 			}
-			fmt.Println(vp8Params.RTPCodec())
-			vp8Params.BitRate = 1000_000 // 1MB
+			log.Println(vp8Params.RTPCodec())
+			vp8Params.BitRate = 1_000_000 // 1MB
 
 			// Register audio codec
 			opusParams, err := opus.NewParams()
@@ -171,14 +172,17 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 			}
 			defer func() {
 				if cErr := peerConnection.Close(); cErr != nil {
-					fmt.Printf("cannot close peerConnection %v\n", cErr)
+					log.Printf("cannot close peerConnection %v\n", cErr)
 				}
 			}()
 
 			// Set the handler for ICE connection state
 			// This will notify you when the peer has connected/disconnected
 			peerConnection.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
-				fmt.Printf("Connection State has changed %s \n", connectionState.String())
+				log.Printf("Connection State has changed %s \n", connectionState.String())
+				if connectionState.String() == "closed" || connectionState.String() == "disconnected" || connectionState.String() == "failed"{
+					peerConnection.Close()
+				}
 			})
 
 			peerConnection.OnICECandidate(func(i *webrtc.ICECandidate) {
@@ -191,6 +195,7 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 					log.Println(err)
 					return
 				}
+				log.Printf("candidate browser %v \n", candidateString)
 
 				if writeErr := c.WriteJSON(&BaseMessage{
 					Topic: "candidate",
@@ -212,9 +217,10 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 			
 			if (s != nil) {
 				for _, track := range s.GetTracks() {
-				fmt.Println(track.Kind())
+				defer track.Close()
+				log.Println(track.Kind())
 				track.OnEnded(func(err error) {
-					fmt.Printf("Track (ID: %s) ended with error: %v\n",
+					log.Printf("Track (ID: %s) ended with error: %v\n",
 						track.ID(), err)
 				})
 
@@ -229,16 +235,14 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			}
-
-			
 			
 			// Register data channel creation handling
 			peerConnection.OnDataChannel(func(d *webrtc.DataChannel) {
-				fmt.Printf("New DataChannel %s %d\n", d.Label(), d.ID())
+				log.Printf("New DataChannel %s %d\n", d.Label(), d.ID())
 
 				// Register channel opening handling
 				d.OnOpen(func() {
-					fmt.Printf("Data channel '%s'-'%d' open\n", d.Label(), d.ID())
+					log.Printf("Data channel '%s'-'%d' open\n", d.Label(), d.ID())
 				})
 
 				// Register text message handling
@@ -249,14 +253,14 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 							return
 						}
 						servoDeg += 10
-						fmt.Printf("go-right: %d", servoDeg)
+						log.Printf("go-right: %d", servoDeg)
 						exec.Command("python3", "main.py", strconv.Itoa(servoDeg)).Run()
 					case "go-left":
 						if servoDeg <= 0 {
 							return
 						}
 						servoDeg -= 10
-						fmt.Printf("go-left: %d", servoDeg)
+						log.Printf("go-left: %d", servoDeg)
 						exec.Command("python3", "main.py", strconv.Itoa(servoDeg)).Run()
 					default:
 						servoDeg = 0
@@ -267,10 +271,10 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 			// Set the remote SessionDescription
 			offer := webrtc.SessionDescription{}
 			err = json.Unmarshal([]byte(msgRes.Data), &offer)
-			log.Println(offer)
 			if err != nil {
 				log.Println(err)
 			}
+			log.Println(offer)
 			err = peerConnection.SetRemoteDescription(offer)
 			if err != nil {
 				panic(err)
@@ -281,13 +285,12 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				panic(err)
 			}
-			fmt.Println("ctx: create answer")
+			log.Println("ctx: create answer")
 			// Sets the LocalDescription, and starts our UDP listeners
 			err = peerConnection.SetLocalDescription(answer)
 			if err != nil {
 				panic(err)
 			}
-			fmt.Println(answer.SDP)
 
 			answerSD, _ := json.Marshal(answer)
 
@@ -302,6 +305,7 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 			log.Println("add candidate")
 			candidate := webrtc.ICECandidateInit{}
 			json.Unmarshal([]byte(msgRes.Data), &candidate)
+			log.Printf("candidate : &v", candidate)
 			err := peerConnection.AddICECandidate(candidate)
 			if err != nil {
 				log.Println(err)
