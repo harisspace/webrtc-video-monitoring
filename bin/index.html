@@ -149,11 +149,31 @@
     }
 
     // ==== SERVO EVENT WITH DATA CHANNEL ====
+    
     goLeft.onclick = () => {
-        sendChannel.send("go-left")
+        let timeNow = new Date()
+    let hours = timeNow.getHours()
+    let minutes = timeNow.getMinutes()
+    let seconds = timeNow.getSeconds()
+    let milliSeconds = timeNow.getMilliseconds()
+    let timeStamps = hours + ":" + minutes + ":" + seconds + ":" + milliSeconds
+        console.log(timeStamps)
+	let intervalId = setInterval(() => {
+		sendChannel.send("go-left")
+	}, 100)
+	setTimeout(() => {
+		clearInterval(intervalId)
+	}, 2000)
     }
 
     goRight.onclick = () => {
+        let timeNow = new Date()
+    let hours = timeNow.getHours()
+    let minutes = timeNow.getMinutes()
+    let seconds = timeNow.getSeconds()
+    let milliSeconds = timeNow.getMilliseconds()
+    let timeStamps = hours + ":" + minutes + ":" + seconds + ":" + milliSeconds
+        console.log(timeStamps)
         sendChannel.send("go-right")
     }
     

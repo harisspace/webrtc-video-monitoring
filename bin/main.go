@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"sync"
 	"os/exec"
+	"fmt"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/pion/mediadevices"
@@ -247,20 +249,24 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 
 				// Register text message handling
 				d.OnMessage(func(msg webrtc.DataChannelMessage) {
+					// timing
+					timeNow := time.Now().String()
 					switch string(msg.Data) {
 					case "go-right":
+						timeNow = time.Now().String()
 						if servoDeg >= 180 {
 							return
 						}
 						servoDeg += 10
-						log.Printf("go-right: %d", servoDeg)
+						fmt.Printf("go-right: %d, timestamp: %s \n", servoDeg, timeNow)
 						exec.Command("python3", "main.py", strconv.Itoa(servoDeg)).Run()
 					case "go-left":
+						timeNow = time.Now().String()
 						if servoDeg <= 0 {
 							return
 						}
 						servoDeg -= 10
-						log.Printf("go-left: %d", servoDeg)
+						fmt.Printf("go-left: %d, timestamp: %s \n", servoDeg, timeNow)
 						exec.Command("python3", "main.py", strconv.Itoa(servoDeg)).Run()
 					default:
 						servoDeg = 0
