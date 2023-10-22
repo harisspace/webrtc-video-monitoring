@@ -13,8 +13,11 @@ degree = float(sys.argv[1])
 
 dc = (degree/18) + 2
 
+waitTime = 4*10+70
+waitTimeInSecond = waitTime/1000
+
 pwm.ChangeDutyCycle(dc)
-sleep(1)
+sleep(waitTimeInSecond)
 
 pwm.stop()
 GPIO.cleanup()

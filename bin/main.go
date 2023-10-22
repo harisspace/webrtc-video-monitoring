@@ -20,8 +20,10 @@ import (
 	"github.com/pion/mediadevices/pkg/prop"
 	"github.com/pion/webrtc/v3"
 
-	_ "github.com/pion/mediadevices/pkg/driver/microphone"
-	_ "github.com/pion/mediadevices/pkg/driver/camera"
+//	_ "github.com/pion/mediadevices/pkg/driver/microphone"
+//	_ "github.com/pion/mediadevices/pkg/driver/camera"
+	_ "github.com/pion/mediadevices/pkg/driver/videotest"
+	_ "github.com/pion/mediadevices/pkg/driver/audiotest"
 )
 
 var (
@@ -250,24 +252,18 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 				// Register text message handling
 				d.OnMessage(func(msg webrtc.DataChannelMessage) {
 					// timing
-					timeNow := time.Now().String()
+					timeNow := time.Now()
 					switch string(msg.Data) {
 					case "go-right":
-						timeNow = time.Now().String()
-						if servoDeg >= 180 {
-							return
-						}
+						timeNow = time.Now()
 						servoDeg += 10
-						fmt.Printf("go-right: %d, timestamp: %s \n", servoDeg, timeNow)
 						exec.Command("python3", "main.py", strconv.Itoa(servoDeg)).Run()
+						fmt.Printf("timeNowRight %s: || since %d\n",timeNow.String(), time.Since(timeNow))
 					case "go-left":
-						timeNow = time.Now().String()
-						if servoDeg <= 0 {
-							return
-						}
+						timeNow = time.Now()
 						servoDeg -= 10
-						fmt.Printf("go-left: %d, timestamp: %s \n", servoDeg, timeNow)
 						exec.Command("python3", "main.py", strconv.Itoa(servoDeg)).Run()
+						fmt.Printf("timeNowLeft %s: || since %d\n",timeNow.String(), time.Since(timeNow))
 					default:
 						servoDeg = 0
 					}

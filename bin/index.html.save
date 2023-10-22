@@ -16,8 +16,8 @@
     let remoteVideo = document.querySelector(".remote-video")
     let cameraCard = document.querySelector('.camera-card')
     let baseVideoWrapper = document.querySelector('.base-video-wrapper')
-    let goLeft = document.querySelector("#left")
-    let goRight = document.querySelector("#right")
+    let goLeft = document.querySelector(".left")
+    let goRight = document.querySelector(".right")
     let stopStream = document.querySelector(".stop-stream")
     let selectResolution = document.getElementById("resolutions")
     let resolution = '480p'
@@ -149,29 +149,29 @@
     }
 
     // ==== SERVO EVENT WITH DATA CHANNEL ====
-    console.log(goLeft)
-    console.log(goRight)
     
     goLeft.onclick = () => {
         let timeNow = new Date()
- 		let hours = timeNow.getHours()
- 		let minutes = timeNow.getMinutes()
-  		let seconds = timeNow.getSeconds()
-   		let milliSeconds = timeNow.getMilliseconds()
-        let timeStamps = hours + ":" + minutes + ":" + seconds + ":" + milliSeconds
-		console.log(timeStamps)
-		sendChannel.send("go-left")
+    let hours = timeNow.getHours()
+    let minutes = timeNow.getMinutes()
+    let seconds = timeNow.getSeconds()
+    let milliSeconds = timeNow.getMilliseconds()
+    let timeStamps = hours + ":" + minutes + ":" + seconds + ":" + milliSeconds
+        console.log(timeStamps)
+	setInterval(() => {}
+,)
+        sendChannel.send("go-left")
     }
 
     goRight.onclick = () => {
         let timeNow = new Date()
-        let hours = timeNow.getHours()
-        let minutes = timeNow.getMinutes()
-        let seconds = timeNow.getSeconds()
-        let milliSeconds = timeNow.getMilliseconds()
-        let timeStamps = hours + ":" + minutes + ":" + seconds + ":" + milliSeconds
-		console.log(timeStamps)
-		sendChannel.send("go-right")
+    let hours = timeNow.getHours()
+    let minutes = timeNow.getMinutes()
+    let seconds = timeNow.getSeconds()
+    let milliSeconds = timeNow.getMilliseconds()
+    let timeStamps = hours + ":" + minutes + ":" + seconds + ":" + milliSeconds
+        console.log(timeStamps)
+        sendChannel.send("go-right")
     }
     
     // ===== STOP STREAM =====
@@ -207,12 +207,12 @@
                 <div class='remote-video'></div>
                 <div class="arrow-wrapper">
                     <div>
-                        <button class="button-20" id="left"role="button">
+                        <button class="button-20" role="button">
                             <i class="arrow left"></i>
                         </button>
                     </div>
                     <div>
-                        <button class="button-20" id="right" role="button">
+                        <button class="button-20" role="button">
                             <i class="arrow right"></i>
                         </button>
                     </div>
