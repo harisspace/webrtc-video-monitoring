@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
-	"os/exec"
+//	"os/exec"
 	"fmt"
 	"time"
 
@@ -252,18 +252,18 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 				// Register text message handling
 				d.OnMessage(func(msg webrtc.DataChannelMessage) {
 					// timing
-					timeNow := time.Now()
+					timeNow := time.Now().String()
 					switch string(msg.Data) {
 					case "go-right":
-						timeNow = time.Now()
+						timeNow = time.Now().String()
 						servoDeg += 10
-						exec.Command("python3", "main.py", strconv.Itoa(servoDeg)).Run()
-						fmt.Printf("timeNowRight %s: || since %d\n",timeNow.String(), time.Since(timeNow))
+						//exec.Command("python3", "main.py", strconv.Itoa(servoDeg)).Run()
+						fmt.Println(timeNow[17:29])
 					case "go-left":
-						timeNow = time.Now()
+						timeNow = time.Now().String()
 						servoDeg -= 10
-						exec.Command("python3", "main.py", strconv.Itoa(servoDeg)).Run()
-						fmt.Printf("timeNowLeft %s: || since %d\n",timeNow.String(), time.Since(timeNow))
+						//exec.Command("python3", "main.py", strconv.Itoa(servoDeg)).Run()
+						fmt.Println(timeNow[17:29])
 					default:
 						servoDeg = 0
 					}

@@ -149,29 +149,29 @@
     }
 
     // ==== SERVO EVENT WITH DATA CHANNEL ====
-    console.log(goLeft)
-    console.log(goRight)
-    
     goLeft.onclick = () => {
-        let timeNow = new Date()
- 		let hours = timeNow.getHours()
- 		let minutes = timeNow.getMinutes()
-  		let seconds = timeNow.getSeconds()
-   		let milliSeconds = timeNow.getMilliseconds()
-        let timeStamps = hours + ":" + minutes + ":" + seconds + ":" + milliSeconds
-		console.log(timeStamps)
-		sendChannel.send("go-left")
+        console.log("click")
+        let i = 0
+        let myInterval = setInterval(() => {
+            console.log(i++)
+            sendChannel.send("go-left")  
+        }, 50)
+        
+        setTimeout(() => {
+            clearInterval(myInterval)
+        }, 1000)
     }
 
     goRight.onclick = () => {
-        let timeNow = new Date()
-        let hours = timeNow.getHours()
-        let minutes = timeNow.getMinutes()
-        let seconds = timeNow.getSeconds()
-        let milliSeconds = timeNow.getMilliseconds()
-        let timeStamps = hours + ":" + minutes + ":" + seconds + ":" + milliSeconds
-		console.log(timeStamps)
-		sendChannel.send("go-right")
+        let i = 0
+        let myInterval = setInterval(() => {
+            console.log(i++)
+            sendChannel.send("go-right")  
+        }, 50)
+        
+        setTimeout(() => {
+                clearInterval(myInterval)
+        }, 1000)
     }
     
     // ===== STOP STREAM =====
