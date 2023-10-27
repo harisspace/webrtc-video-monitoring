@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
-//	"os/exec"
+	"os/exec"
 	"fmt"
 	"time"
 
@@ -20,10 +20,10 @@ import (
 	"github.com/pion/mediadevices/pkg/prop"
 	"github.com/pion/webrtc/v3"
 
-//	_ "github.com/pion/mediadevices/pkg/driver/microphone"
-//	_ "github.com/pion/mediadevices/pkg/driver/camera"
-	_ "github.com/pion/mediadevices/pkg/driver/videotest"
-	_ "github.com/pion/mediadevices/pkg/driver/audiotest"
+	_ "github.com/pion/mediadevices/pkg/driver/microphone"
+	_ "github.com/pion/mediadevices/pkg/driver/camera"
+//	_ "github.com/pion/mediadevices/pkg/driver/videotest"
+//	_ "github.com/pion/mediadevices/pkg/driver/audiotest"
 )
 
 var (
@@ -257,12 +257,12 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 					case "go-right":
 						timeNow = time.Now().String()
 						servoDeg += 10
-						//exec.Command("python3", "main.py", strconv.Itoa(servoDeg)).Run()
+						exec.Command("python3", "main.py", strconv.Itoa(servoDeg)).Run()
 						fmt.Println(timeNow[17:29])
 					case "go-left":
 						timeNow = time.Now().String()
 						servoDeg -= 10
-						//exec.Command("python3", "main.py", strconv.Itoa(servoDeg)).Run()
+						exec.Command("python3", "main.py", strconv.Itoa(servoDeg)).Run()
 						fmt.Println(timeNow[17:29])
 					default:
 						servoDeg = 0
