@@ -20,10 +20,10 @@ import (
 	"github.com/pion/mediadevices/pkg/prop"
 	"github.com/pion/webrtc/v3"
 
-//	_ "github.com/pion/mediadevices/pkg/driver/microphone"
-//	_ "github.com/pion/mediadevices/pkg/driver/camera"
-	_ "github.com/pion/mediadevices/pkg/driver/videotest"
-	_ "github.com/pion/mediadevices/pkg/driver/audiotest"
+	_ "github.com/pion/mediadevices/pkg/driver/microphone"
+	_ "github.com/pion/mediadevices/pkg/driver/camera"
+//	_ "github.com/pion/mediadevices/pkg/driver/videotest"
+//	_ "github.com/pion/mediadevices/pkg/driver/audiotest"
 )
 
 var (
